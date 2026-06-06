@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Trained model artifacts (regenerate with train.py)
+models/*.h5
+models/*.keras
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
