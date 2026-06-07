@@ -111,4 +111,14 @@ def solve_endpoint():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run the Sudoku web app.")
+    # Default to 5001: on macOS, port 5000 is taken by AirPlay Receiver, which
+    # returns "403 Forbidden / Access denied" instead of serving the app.
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 5001)))
+    parser.add_argument("--host", default="127.0.0.1")
+    args = parser.parse_args()
+
+    print(f" * Open http://{args.host}:{args.port}")
+    app.run(host=args.host, port=args.port, debug=True)
