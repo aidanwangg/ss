@@ -1,5 +1,5 @@
 :root {
-  --line: #333;
+  --line: #cbd0d8;
   --thick: #111;
   --given: #1a1a1a;
   --solved: #2563eb;
@@ -54,14 +54,15 @@ h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .cell:focus { background: #eef4ff; }
 .cell.solved { color: var(--solved); font-weight: 500; }
 
-/* Thicker lines between 3x3 boxes */
-.cell:nth-child(9n+1) { border-left: 0; }
-.cell:nth-child(9n)   { border-right: 0; }
-.cell:nth-child(3n)   { border-right: 2px solid var(--thick); }
-.cell:nth-child(9n)   { border-right: 0; }
+/* Thick separators between the 3x3 boxes: after columns 3 & 6, rows 3 & 6.
+   The thin cell lines use --line (light grey) so these stand out clearly. */
+.cell:nth-child(9n+3),
+.cell:nth-child(9n+6) {
+  border-right: 3px solid var(--thick);
+}
 .board > .cell:nth-child(n+19):nth-child(-n+27),
 .board > .cell:nth-child(n+46):nth-child(-n+54) {
-  border-bottom: 2px solid var(--thick);
+  border-bottom: 3px solid var(--thick);
 }
 
 .controls {
