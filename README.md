@@ -1,13 +1,3 @@
----
-title: Sudoku Solver
-emoji: 🔢
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Sudoku Scanner & Solver
 
 Scan a photo of a Sudoku grid, read the digits with a CNN, and solve the
