@@ -23,7 +23,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Imported here so `--help` works without TensorFlow installed.
-    import numpy as np
+    import tensorflow as tf
     from tensorflow import keras
 
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -33,15 +33,34 @@ def main() -> None:
     x_test = (x_test.astype("float32") / 255.0).reshape(-1, INPUT_SIZE, INPUT_SIZE, 1)
 
     # Light augmentation helps the model generalize from handwritten MNIST
-    # to the printed/warped digits coming out of the vision pipeline.
-    datagen = keras.preprocessing.image.ImageDataGenerator(
-        rotation_range=10, width_shift_range=0.1, height_shift_range=0.1, zoom_range=0.1
+    # to the printed/warped digits coming out of the vision pipeline. Built
+    # from Keras preprocessing layers (the old ImageDataGenerator was removed
+    # in Keras 3 / TensorFlow 2.16+). RandomRotation's factor is a fraction of
+    # 2*pi, so ~0.03 ≈ 10 degrees.
+    augment = keras.Sequential(
+        [
+            keras.layers.RandomRotation(0.03),
+            keras.layers.RandomTranslation(0.1, 0.1),
+            keras.layers.RandomZoom(0.1),
+        ],
+        name="augmentation",
+    )
+
+    train_ds = (
+        tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        .shuffle(10_000)
+        .batch(args.batch_size)
+        .map(
+            lambda x, y: (augment(x, training=True), y),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
+        .prefetch(tf.data.AUTOTUNE)
     )
 
     model = build_model()
     model.summary()
     model.fit(
-        datagen.flow(x_train, y_train, batch_size=args.batch_size),
+        train_ds,
         validation_data=(x_test, y_test),
         epochs=args.epochs,
     )
