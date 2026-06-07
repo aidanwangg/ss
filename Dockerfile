@@ -16,8 +16,11 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 COPY . .
 
-# Train the digit model at build time (reproducible; no model binary committed).
-RUN python train.py --epochs 10
+# Use a committed model if one is present (so the deployed model matches what
+# you trained/validated locally); otherwise train one at build time as a
+# fallback using the fonts installed above.
+RUN test -f models/digit_model.keras -o -f models/digit_model.h5 \
+    || python train.py --epochs 10
 
 # Hugging Face Spaces expects the app on port 7860.
 EXPOSE 7860

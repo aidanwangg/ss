@@ -7,8 +7,6 @@ __pycache__/
 *.pyc
 .idea
 .vscode
-# Train the model fresh inside the image:
-models/
 # Local artifacts:
 debug_cells.png
 *_preview.png
