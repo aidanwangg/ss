@@ -1,0 +1,107 @@
+:root {
+  --line: #333;
+  --thick: #111;
+  --given: #1a1a1a;
+  --solved: #2563eb;
+  --bg: #f6f7f9;
+  --accent: #2563eb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: #1a1a1a;
+  display: flex;
+  justify-content: center;
+}
+
+main {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px 16px 48px;
+  text-align: center;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.sub { color: #666; margin: 0 0 20px; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0;
+  width: min(92vw, 450px);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 3px solid var(--thick);
+  background: #fff;
+}
+
+.cell {
+  border: 1px solid var(--line);
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: clamp(1rem, 5vw, 1.6rem);
+  font-weight: 600;
+  color: var(--given);
+  padding: 0;
+  outline: none;
+  background: transparent;
+}
+.cell:focus { background: #eef4ff; }
+.cell.solved { color: var(--solved); font-weight: 500; }
+
+/* Thicker lines between 3x3 boxes */
+.cell:nth-child(9n+1) { border-left: 0; }
+.cell:nth-child(9n)   { border-right: 0; }
+.cell:nth-child(3n)   { border-right: 2px solid var(--thick); }
+.cell:nth-child(9n)   { border-right: 0; }
+.board > .cell:nth-child(n+19):nth-child(-n+27),
+.board > .cell:nth-child(n+46):nth-child(-n+54) {
+  border-bottom: 2px solid var(--thick);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid #cdd2da;
+  background: #fff;
+  cursor: pointer;
+}
+.btn:hover { background: #f0f2f5; }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.primary:hover { background: #1d4ed8; }
+.file-btn { display: inline-flex; align-items: center; }
+
+.status {
+  min-height: 1.4em;
+  margin: 12px 0;
+  font-weight: 500;
+}
+.status.error { color: #c0392b; }
+.status.ok { color: #1a7f37; }
+.status.busy { color: #666; }
+
+.legend { color: #666; font-size: 0.9rem; }
+.swatch {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin: 0 4px 0 14px;
+}
+.swatch.given { background: var(--given); }
+.swatch.solved { background: var(--solved); }

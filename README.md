@@ -44,7 +44,17 @@ python train.py --printed-samples 6000 --epochs 15
 > is intentionally pessimistic; on a single clean puzzle font it is effectively
 > 100%.
 
-## Solve a puzzle from a photo
+## Web app (upload a photo or type values)
+
+```bash
+python app.py        # serves http://127.0.0.1:5000
+```
+
+Open the page and either **Upload photo** (the grid is pre-filled with detected
+digits — fix any misreads) or type values straight into the 9x9 grid, then
+click **Solve**. Given values are shown in black, solved cells in blue.
+
+## Solve a puzzle from a photo (CLI)
 
 ```bash
 python solve.py path/to/photo.jpg
@@ -96,6 +106,7 @@ python -m unittest discover -s tests -v
 ## Project layout
 
 ```
+app.py                    # Flask web app: upload a photo or type values, then solve
 solve.py                  # CLI entrypoint: photo -> solution
 train.py                  # train the digit CNN (printed fonts; --with-mnist optional)
 sudoku/
@@ -103,6 +114,8 @@ sudoku/
   vision.py               # OpenCV grid detection + cell extraction + debug montage
   model.py                # CNN architecture + load/save
   printed_digits.py       # synthetic printed-digit generator (real fonts)
+templates/index.html      # web UI page
+static/                   # style.css + app.js (interactive grid)
 tests/
   test_solver.py          # solver unit tests
 RUNNING.md                # detailed setup, training, scanning, troubleshooting
