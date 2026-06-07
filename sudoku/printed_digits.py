@@ -107,11 +107,33 @@ def _center_28(img: np.ndarray) -> np.ndarray | None:
     return out
 
 
+def _font_has_digits(font_path: str, ImageFont, Image, ImageDraw) -> bool:
+    """True only if the font actually contains distinct digit glyphs.
+
+    Fonts that lack digits (e.g. Unicode-block or symbol fonts) render every
+    character as the same `.notdef` box. We detect that by rendering a few
+    digits and rejecting the font if any two come out near-identical. This is
+    OS-independent — far more robust than blocklisting font names per platform.
+    """
+    imgs = []
+    for d in (1, 4, 7, 8):
+        im = _render_truetype(d, font_path, 40, ImageFont, Image, ImageDraw)
+        if im is None:
+            return False
+        imgs.append(im.astype("float32"))
+    for i in range(len(imgs)):
+        for j in range(i + 1, len(imgs)):
+            if np.abs(imgs[i] - imgs[j]).mean() < 3.0:  # near-identical => .notdef
+                return False
+    return True
+
+
 def generate(samples_per_digit: int = 2000, seed: int = 0):
     """Return (x, y) printed-digit data: x is (N,28,28,1) float32 in [0,1].
 
-    Digits 1-9 only (Sudoku has no 0). Prefers real TrueType fonts; falls back
-    to OpenCV vector fonts if none are available.
+    Digits 1-9 only (Sudoku has no 0). Prefers real TrueType fonts (skipping
+    any that lack real digit glyphs); falls back to OpenCV vector fonts if none
+    are available.
     """
     rng = np.random.default_rng(seed)
 
@@ -123,6 +145,9 @@ def generate(samples_per_digit: int = 2000, seed: int = 0):
             pil = (Image, ImageDraw, ImageFont)
         except Exception:
             pil = None
+    if fonts and pil:
+        Image, ImageDraw, ImageFont = pil
+        fonts = [f for f in fonts if _font_has_digits(f, ImageFont, Image, ImageDraw)]
     use_truetype = bool(fonts and pil)
 
     xs, ys = [], []
