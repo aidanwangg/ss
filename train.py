@@ -16,16 +16,23 @@ from sudoku.model import DEFAULT_MODEL_PATH, INPUT_SIZE, build_model
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train the digit CNN on MNIST.")
-    parser.add_argument("--epochs", type=int, default=8)
+    parser = argparse.ArgumentParser(
+        description="Train the digit-recognition CNN for the Sudoku scanner."
+    )
+    parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--out", default=DEFAULT_MODEL_PATH)
     parser.add_argument(
         "--printed-samples",
         type=int,
-        default=3000,
-        help="Synthetic printed digits per class to mix in (0 disables). "
-        "Printed digits fix MNIST misreading printed '1' as '7'.",
+        default=4000,
+        help="Synthetic printed digits per class (real fonts). 0 disables.",
+    )
+    parser.add_argument(
+        "--with-mnist",
+        action="store_true",
+        help="Also train on handwritten MNIST. Off by default: for a printed "
+        "Sudoku scanner, handwriting hurts accuracy (printed '1' read as '7').",
     )
     args = parser.parse_args()
 
@@ -34,32 +41,39 @@ def main() -> None:
     import tensorflow as tf
     from tensorflow import keras
 
-    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+    x_parts, y_parts, xt_parts, yt_parts = [], [], [], []
 
-    # Normalize to [0, 1] and add the channel dimension.
-    x_train = (x_train.astype("float32") / 255.0).reshape(-1, INPUT_SIZE, INPUT_SIZE, 1)
-    x_test = (x_test.astype("float32") / 255.0).reshape(-1, INPUT_SIZE, INPUT_SIZE, 1)
-
-    # Mix in synthetic printed digits so the model recognizes typeset Sudoku
-    # grids, not just handwritten MNIST. Without these, printed '1's are often
-    # misread as '7'. Added to both train and test so the reported accuracy
-    # reflects printed-digit performance too.
+    # Printed digits (real fonts) are the primary signal for typeset puzzles.
     if args.printed_samples > 0:
         from sudoku.printed_digits import generate
 
         px_train, py_train = generate(args.printed_samples, seed=0)
         px_test, py_test = generate(max(1, args.printed_samples // 5), seed=1)
-        x_train = np.concatenate([x_train, px_train], axis=0)
-        y_train = np.concatenate([y_train, py_train], axis=0)
-        x_test = np.concatenate([x_test, px_test], axis=0)
-        y_test = np.concatenate([y_test, py_test], axis=0)
+        x_parts.append(px_train); y_parts.append(py_train)
+        xt_parts.append(px_test); yt_parts.append(py_test)
         print(f"Added {len(px_train)} printed-digit training samples.")
 
-    # Light augmentation helps the model generalize from handwritten MNIST
-    # to the printed/warped digits coming out of the vision pipeline. Built
-    # from Keras preprocessing layers (the old ImageDataGenerator was removed
-    # in Keras 3 / TensorFlow 2.16+). RandomRotation's factor is a fraction of
-    # 2*pi, so ~0.03 ≈ 10 degrees.
+    # MNIST handwriting is optional and off by default; it can pull printed
+    # '1's toward '7'. Enable with --with-mnist if you also scan handwriting.
+    if args.with_mnist:
+        (mx, my), (mxt, myt) = keras.datasets.mnist.load_data()
+        mx = (mx.astype("float32") / 255.0).reshape(-1, INPUT_SIZE, INPUT_SIZE, 1)
+        mxt = (mxt.astype("float32") / 255.0).reshape(-1, INPUT_SIZE, INPUT_SIZE, 1)
+        x_parts.append(mx); y_parts.append(my)
+        xt_parts.append(mxt); yt_parts.append(myt)
+        print(f"Added {len(mx)} handwritten MNIST training samples.")
+
+    if not x_parts:
+        raise SystemExit("No training data: set --printed-samples > 0 or --with-mnist.")
+
+    x_train = np.concatenate(x_parts, axis=0)
+    y_train = np.concatenate(y_parts, axis=0)
+    x_test = np.concatenate(xt_parts, axis=0)
+    y_test = np.concatenate(yt_parts, axis=0)
+
+    # Light augmentation for tolerance to slight scan skew/shift. Built from
+    # Keras preprocessing layers (ImageDataGenerator was removed in Keras 3 /
+    # TensorFlow 2.16+). RandomRotation's factor is a fraction of 2*pi.
     augment = keras.Sequential(
         [
             keras.layers.RandomRotation(0.03),
