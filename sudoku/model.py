@@ -6,7 +6,7 @@ import os
 
 # The trained weights live here by default. `train.py` writes this file.
 DEFAULT_MODEL_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "models", "digit_model.h5"
+    os.path.dirname(os.path.dirname(__file__)), "models", "digit_model.keras"
 )
 
 # Cells are normalized to this size before classification (MNIST convention).
@@ -55,9 +55,15 @@ def load_model(path: str = DEFAULT_MODEL_PATH):
     """
     from tensorflow import keras
 
+    # Prefer the requested path; fall back to a legacy .h5 sibling so models
+    # trained before the switch to the native .keras format still load.
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"No trained model found at {path!r}. "
-            "Run `python train.py` first to train and save one."
-        )
+        legacy = os.path.splitext(path)[0] + ".h5"
+        if os.path.exists(legacy):
+            path = legacy
+        else:
+            raise FileNotFoundError(
+                f"No trained model found at {path!r}. "
+                "Run `python train.py` first to train and save one."
+            )
     return keras.models.load_model(path)

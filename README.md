@@ -5,16 +5,19 @@ puzzle with backtracking.
 
 ```
 photo.jpg ──▶ OpenCV pipeline ──▶ CNN digit reader ──▶ backtracking solver ──▶ solution
-            (find & warp grid)   (Keras, MNIST-trained)
+            (find & warp grid)   (Keras, real-font)
 ```
 
 ## How it works
 
 1. **Vision** (`sudoku/vision.py`) — OpenCV finds the grid's outer contour,
    perspective-warps it to a flat square, slices it into 81 cells, and crops &
-   centers each digit MNIST-style.
-2. **Recognition** (`sudoku/model.py`, `train.py`) — a small Keras CNN trained
-   on MNIST classifies each non-empty cell.
+   centers each digit.
+2. **Recognition** (`sudoku/model.py`, `train.py`) — a small Keras CNN reads
+   each non-empty cell. It is trained on **printed digits rendered from real
+   system fonts** (`sudoku/printed_digits.py`), which match typeset Sudoku
+   grids. (Handwritten MNIST is available via `--with-mnist` but off by
+   default — handwriting makes printed `1`s look like `7`s.)
 3. **Solving** (`sudoku/solver.py`) — a backtracking search with the
    minimum-remaining-values heuristic fills the grid.
 
@@ -24,21 +27,28 @@ photo.jpg ──▶ OpenCV pipeline ──▶ CNN digit reader ──▶ backtra
 pip install -r requirements.txt
 ```
 
+See **[RUNNING.md](RUNNING.md)** for full setup (incl. Apple Silicon and the
+macOS SSL-certificate fix) and troubleshooting.
+
 ## Train the digit model
 
-Downloads MNIST (cached after the first run) and saves weights to
-`models/digit_model.h5`:
+Trains on printed digits (real fonts) and saves to `models/digit_model.keras`:
 
 ```bash
-python train.py            # defaults: 8 epochs
-python train.py --epochs 15
+python train.py                 # printed-only, 12 epochs (recommended)
+python train.py --with-mnist    # also include handwritten MNIST
+python train.py --printed-samples 6000 --epochs 15
 ```
+
+> The reported "Test accuracy" (~0.90) spans dozens of very different fonts and
+> is intentionally pessimistic; on a single clean puzzle font it is effectively
+> 100%.
 
 ## Solve a puzzle from a photo
 
 ```bash
 python solve.py path/to/photo.jpg
-python solve.py path/to/photo.jpg --debug
+python solve.py path/to/photo.jpg --debug   # also writes debug_cells.png
 ```
 
 Example output:
@@ -57,6 +67,9 @@ Solution:
 ...
 ```
 
+`--debug` writes `debug_cells.png`: a 9x9 montage of the exact cell images fed
+to the model, each labeled with its prediction — handy for diagnosing misreads.
+
 ## Run the tests
 
 The solver is fully tested and needs no ML dependencies:
@@ -74,22 +87,23 @@ python -m unittest discover -s tests -v
 
 ## Notes & limitations
 
-- The model is trained on **handwritten** MNIST digits. It works on printed
-  puzzles too, but accuracy varies; the training script adds rotation/zoom
-  augmentation to help generalize. For best results on printed grids you can
-  retrain on a printed-font digit dataset using the same `build_model()`.
+- The model is trained on **printed** digits from real fonts, so it targets
+  typeset/on-screen puzzles. For handwritten puzzles, retrain with
+  `--with-mnist`.
 - A single misread digit can make a valid puzzle unsolvable — `solve.py` will
-  say so and suggest re-scanning.
+  say so and suggest re-scanning. Use `--debug` to see what the model read.
 
 ## Project layout
 
 ```
-solve.py              # CLI entrypoint: photo -> solution
-train.py              # train the CNN on MNIST
+solve.py                  # CLI entrypoint: photo -> solution
+train.py                  # train the digit CNN (printed fonts; --with-mnist optional)
 sudoku/
-  solver.py           # backtracking solver
-  vision.py           # OpenCV grid detection + cell extraction
-  model.py            # CNN architecture + load/save
+  solver.py               # backtracking solver
+  vision.py               # OpenCV grid detection + cell extraction + debug montage
+  model.py                # CNN architecture + load/save
+  printed_digits.py       # synthetic printed-digit generator (real fonts)
 tests/
-  test_solver.py      # solver unit tests
+  test_solver.py          # solver unit tests
+RUNNING.md                # detailed setup, training, scanning, troubleshooting
 ```
