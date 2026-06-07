@@ -145,4 +145,34 @@ def extract_grid(image_path: str, model, debug: bool = False) -> List[List[int]]
 
     if debug:
         print(f"Detected {len(digit_images)} filled cells.")
+        if digit_images:
+            _dump_debug_montage(digit_images, preds, "debug_cells.png")
+            print("Wrote debug_cells.png (extracted cells with predictions).")
     return board
+
+
+def _dump_debug_montage(digit_images, preds, path: str, cell_px: int = 48) -> None:
+    """Save a 9x9 montage of the extracted cell images with predicted labels.
+
+    Lets us see exactly what the model is classifying: if a cell clearly shows
+    a '1' but the red prediction says '7', it's a model problem; if the cell
+    image itself is garbled, it's a vision/extraction problem.
+    """
+    montage = np.zeros((9 * cell_px, 9 * cell_px), dtype=np.uint8)
+    for (r, c, digit), pred in zip(digit_images, preds):
+        up = cv2.resize(
+            digit.astype("uint8"), (cell_px, cell_px), interpolation=cv2.INTER_NEAREST
+        )
+        montage[r * cell_px : (r + 1) * cell_px, c * cell_px : (c + 1) * cell_px] = up
+
+    vis = cv2.cvtColor(montage, cv2.COLOR_GRAY2BGR)
+    for i in range(10):
+        cv2.line(vis, (0, i * cell_px), (9 * cell_px, i * cell_px), (0, 180, 0), 1)
+        cv2.line(vis, (i * cell_px, 0), (i * cell_px, 9 * cell_px), (0, 180, 0), 1)
+    for (r, c, _), pred in zip(digit_images, preds):
+        label = str(int(np.argmax(pred)))
+        cv2.putText(
+            vis, label, (c * cell_px + 2, r * cell_px + 14),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1, cv2.LINE_AA,
+        )
+    cv2.imwrite(path, vis)
