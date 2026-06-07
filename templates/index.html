@@ -3,30 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sudoku Scanner &amp; Solver</title>
+  <title>Sudoku Solver</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <main>
-    <h1>Sudoku Scanner &amp; Solver</h1>
-    <p class="sub">Upload a photo of a puzzle, or type the values in, then solve.</p>
+  <main class="card">
+    <header class="head">
+      <h1>Sudoku Solver</h1>
+      <p class="sub">Upload a photo or type the puzzle, then solve.</p>
+    </header>
 
     <div id="board" class="board" aria-label="Sudoku grid"></div>
 
-    <div id="status" class="status" role="status"></div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
 
     <div class="controls">
       <label class="btn file-btn">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
         Upload photo
         <input type="file" id="file" accept="image/*" hidden>
       </label>
-      <button class="btn primary" id="solve">Solve</button>
-      <button class="btn" id="clear">Clear</button>
+      <button class="btn primary" id="solve">
+        <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M5 12l5 5L20 6"/></svg>
+        Solve
+      </button>
+      <button class="btn ghost" id="clear">Clear</button>
     </div>
 
     <p class="legend">
-      <span class="swatch given"></span> your values
-      <span class="swatch solved"></span> solved
+      <span class="dot given"></span> your values
+      <span class="dot solved"></span> solved
     </p>
   </main>
 
